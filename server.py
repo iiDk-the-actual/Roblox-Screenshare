@@ -14,8 +14,16 @@ WIDTH = 200
 HEIGHT = int(WIDTH * 9 / 16)
 AUDIO_BUFFER = 5
 
+prev_frame = None
+
+def quantize(img):
+    # 16 levels per channel
+    return (np.round(img / 17) * 17).astype(np.uint8)
+
 @app.route("/frame")
 def frame():
+    global prev_frame
+
     with mss.mss() as sct:
         monitor = sct.monitors[1]
         screenshot = np.array(sct.grab(monitor))
@@ -24,11 +32,31 @@ def frame():
     small = cv2.resize(screenshot, (WIDTH, HEIGHT))
     small = cv2.cvtColor(small, cv2.COLOR_BGR2RGB)
 
-    return jsonify(small.tolist())
+    quantized = quantize(small)
+
+    updates = []
+
+    if prev_frame is None:
+        # First frame — send everything
+        for y in range(HEIGHT):
+            for x in range(WIDTH):
+                r, g, b = quantized[y, x]
+                updates.append([x, y, int(r), int(g), int(b)])
+    else:
+        diff = np.any(quantized != prev_frame, axis=2)
+        ys, xs = np.where(diff)
+
+        for y, x in zip(ys, xs):
+            r, g, b = quantized[y, x]
+            updates.append([int(x), int(y), int(r), int(g), int(b)])
+
+    prev_frame = quantized.copy()
+
+    return jsonify({"u": updates})
 
 SAMPLE_RATE = 24000
 CHANNELS = 1
-BUFFER_SIZE = SAMPLE_RATE * AUDIO_BUFFER
+BUFFER_SIZE = SAMPLE_RATE * (AUDIO_BUFFER + 1)
 
 audio_buffer = np.zeros(BUFFER_SIZE, dtype=np.float32)
 buffer_index = 0
