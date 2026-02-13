@@ -12,7 +12,7 @@ app = Flask(__name__)
 # SETTINGS
 WIDTH = 200
 HEIGHT = int(WIDTH * 9 / 16)
-AUDIO_BUFFER = 2
+AUDIO_BUFFER = 5
 
 @app.route("/frame")
 def frame():
