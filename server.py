@@ -6,66 +6,104 @@ import sounddevice as sd
 import threading
 import wave
 import io
+import time
 
 app = Flask(__name__)
 
 # SETTINGS
 WIDTH = 200
-HEIGHT = int(WIDTH * 9 / 16)
-FPS = 8
+HEIGHT = int(WIDTH * 9 / 16) # 16/9
+FPS = 10
 
 AUDIO_BUFFER = 5
 USE_MICROPHONE = False
 
-prev_frame = None
+last_sent_frame = None
+FRAME_BUFFER_SIZE = FPS
+frame_buffer = []
+buffer_lock = threading.Lock()
 
 def quantize(img):
     # 16 levels per channel
     return (np.round(img / 17) * 17).astype(np.uint8)
 
-@app.route("/frame")
-def frame():
-    global prev_frame
+def capture_frames():
+    global frame_buffer
 
     with mss.mss() as sct:
         monitor = sct.monitors[1]
-        screenshot = np.array(sct.grab(monitor))
+        frame_interval = 1.0 / FPS
 
-    screenshot = screenshot[:, :, :3]
-    small = cv2.resize(screenshot, (WIDTH, HEIGHT))
-    small = cv2.cvtColor(small, cv2.COLOR_BGR2RGB)
+        while True:
+            start_time = time.time()
 
-    quantized = quantize(small)
+            screenshot = np.array(sct.grab(monitor))[:, :, :3]
+            small = cv2.resize(screenshot, (WIDTH, HEIGHT))
+            small = cv2.cvtColor(small, cv2.COLOR_BGR2RGB)
+            quantized = quantize(small)
 
-    updates = []
+            with buffer_lock:
+                frame_buffer.append(quantized)
+                if len(frame_buffer) > FRAME_BUFFER_SIZE:
+                    frame_buffer.pop(0)
 
-    if prev_frame is None:
-        # First frame — send everything
-        for y in range(HEIGHT):
-            for x in range(WIDTH):
-                r, g, b = quantized[y, x]
-                updates.append([x, y, int(r), int(g), int(b)])
-    else:
-        diff = np.any(quantized != prev_frame, axis=2)
-        ys, xs = np.where(diff)
+            elapsed = time.time() - start_time
+            sleep_time = max(0, frame_interval - elapsed)
+            time.sleep(sleep_time)
 
-        for y, x in zip(ys, xs):
-            r, g, b = quantized[y, x]
-            updates.append([int(x), int(y), int(r), int(g), int(b)])
+@app.route("/frame")
+def frame():
+    global last_sent_frame
 
-    prev_frame = quantized.copy()
+    updates_all = []
 
-    return jsonify({"u": updates})
+    with buffer_lock:
+        frames = frame_buffer.copy()
+
+    for frame_img in frames:
+        updates = []
+
+        if last_sent_frame is None:
+            ys, xs = np.indices((HEIGHT, WIDTH))
+            ys = ys.flatten()
+            xs = xs.flatten()
+
+            for y, x in zip(ys, xs):
+                r, g, b = frame_img[y, x]
+                updates.append([int(x), int(y), int(r), int(g), int(b)])
+        else:
+            diff = np.any(frame_img != last_sent_frame, axis=2)
+            ys, xs = np.where(diff)
+
+            for y, x in zip(ys, xs):
+                r, g, b = frame_img[y, x]
+                updates.append([int(x), int(y), int(r), int(g), int(b)])
+
+        updates_all.append(updates)
+        last_sent_frame = frame_img.copy()
+
+    return jsonify({"frames": updates_all})
+
+@app.route("/settings")
+def settings():
+    return jsonify({
+        "width": WIDTH,
+        "height": HEIGHT,
+        "fps": FPS,
+        "audiobuffer": AUDIO_BUFFER,
+    })
 
 @app.route("/reset")
 def reset():
-    global prev_frame
-    prev_frame = None
+    global frame_buffer, last_sent_frame
+    with buffer_lock:
+        frame_buffer = []
+    last_sent_frame = None
     return "OK"
 
 SAMPLE_RATE = 24000
 CHANNELS = 1
-BUFFER_SIZE = SAMPLE_RATE * (AUDIO_BUFFER)
+BUFFER_SIZE = SAMPLE_RATE * (AUDIO_BUFFER + 1)
 
 audio_buffer = np.zeros(BUFFER_SIZE, dtype=np.float32)
 buffer_index = 0
@@ -125,4 +163,7 @@ def get_audio():
     return Response(mem.read(), mimetype="audio/wav")
 
 if __name__ == "__main__":
+    capture_thread = threading.Thread(target=capture_frames, daemon=True)
+    capture_thread.start()
+
     app.run(host="0.0.0.0", port=5000)
