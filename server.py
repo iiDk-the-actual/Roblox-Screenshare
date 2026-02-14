@@ -14,8 +14,8 @@ WIDTH = 200
 HEIGHT = int(WIDTH * 9 / 16)
 FPS = 8
 
-AUDIO_BUFFER = 1
-USE_MICROPHONE = True
+AUDIO_BUFFER = 5
+USE_MICROPHONE = False
 
 prev_frame = None
 
