@@ -65,7 +65,7 @@ def reset():
 
 SAMPLE_RATE = 24000
 CHANNELS = 1
-BUFFER_SIZE = SAMPLE_RATE * (AUDIO_BUFFER + (1 if USE_MICROPHONE else 2))
+BUFFER_SIZE = SAMPLE_RATE * (AUDIO_BUFFER)
 
 audio_buffer = np.zeros(BUFFER_SIZE, dtype=np.float32)
 buffer_index = 0
