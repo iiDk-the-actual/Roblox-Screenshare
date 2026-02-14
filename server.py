@@ -12,7 +12,10 @@ app = Flask(__name__)
 # SETTINGS
 WIDTH = 200
 HEIGHT = int(WIDTH * 9 / 16)
-AUDIO_BUFFER = 5
+FPS = 8
+
+AUDIO_BUFFER = 1
+USE_MICROPHONE = True
 
 prev_frame = None
 
@@ -62,7 +65,7 @@ def reset():
 
 SAMPLE_RATE = 24000
 CHANNELS = 1
-BUFFER_SIZE = SAMPLE_RATE * (AUDIO_BUFFER + 2)
+BUFFER_SIZE = SAMPLE_RATE * (AUDIO_BUFFER + (1 if USE_MICROPHONE else 2))
 
 audio_buffer = np.zeros(BUFFER_SIZE, dtype=np.float32)
 buffer_index = 0
@@ -71,7 +74,7 @@ lock = threading.Lock()
 def find_loopback():
     devices = sd.query_devices()
     for i, dev in enumerate(devices):
-        if "cable output" in dev["name"].lower():
+        if "cable output" in dev["name"].lower() or USE_MICROPHONE and i == 0:
             print("Running with device "+dev["name"])
             return i
     return None
