@@ -54,6 +54,12 @@ def frame():
 
     return jsonify({"u": updates})
 
+@app.route("/reset")
+def reset():
+    global prev_frame
+    prev_frame = None
+    return "OK"
+
 SAMPLE_RATE = 24000
 CHANNELS = 1
 BUFFER_SIZE = SAMPLE_RATE * (AUDIO_BUFFER + 1)
