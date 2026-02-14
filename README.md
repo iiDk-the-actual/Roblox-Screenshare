@@ -10,7 +10,7 @@ This is a tool that allows for streaming of video and audio to Roblox. It is mea
 
 ```lua
 require(140187158857796)(owner.Name, {
-	["Server"] = "http://screen.iidk.online",
+	["Server"] = "http://example.com",
 	["FPS"] = 8,
 	["Width"] = 200,
 	["AudioBuffer"] = 5
