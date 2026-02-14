@@ -10,7 +10,7 @@ import io
 app = Flask(__name__)
 
 # SETTINGS
-WIDTH = 200
+WIDTH = 150
 HEIGHT = int(WIDTH * 9 / 16)
 AUDIO_BUFFER = 5
 
@@ -62,7 +62,7 @@ def reset():
 
 SAMPLE_RATE = 24000
 CHANNELS = 1
-BUFFER_SIZE = SAMPLE_RATE * (AUDIO_BUFFER + 1)
+BUFFER_SIZE = SAMPLE_RATE * (AUDIO_BUFFER + 2)
 
 audio_buffer = np.zeros(BUFFER_SIZE, dtype=np.float32)
 buffer_index = 0
