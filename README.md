@@ -9,10 +9,5 @@ This is a tool that allows for streaming of video and audio to Roblox. It is mea
 4. Run the script below (If the module don't exist/work, you may reupload the rbxm):
 
 ```lua
-require(140187158857796)(owner.Name, {
-	["Server"] = "http://example.com",
-	["FPS"] = 8,
-	["Width"] = 200,
-	["AudioBuffer"] = 5
-}) -- Live Screenshare
+require(140187158857796)(owner.Name, "http://example.com") -- Live Screenshare
 ```
