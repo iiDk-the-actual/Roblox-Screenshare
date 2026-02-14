@@ -55,15 +55,17 @@ def capture_frames():
 def frame():
     global last_sent_frame
 
-    updates_all = []
-
     with buffer_lock:
         frames = frame_buffer.copy()
+
+    updates_all = []
+
+    reference_frame = last_sent_frame if last_sent_frame is not None else frames[0] if frames else None
 
     for frame_img in frames:
         updates = []
 
-        if last_sent_frame is None:
+        if reference_frame is None:
             ys, xs = np.indices((HEIGHT, WIDTH))
             ys = ys.flatten()
             xs = xs.flatten()
@@ -72,7 +74,7 @@ def frame():
                 r, g, b = frame_img[y, x]
                 updates.append([int(x), int(y), int(r), int(g), int(b)])
         else:
-            diff = np.any(frame_img != last_sent_frame, axis=2)
+            diff = np.any(frame_img != reference_frame, axis=2)
             ys, xs = np.where(diff)
 
             for y, x in zip(ys, xs):
@@ -80,7 +82,10 @@ def frame():
                 updates.append([int(x), int(y), int(r), int(g), int(b)])
 
         updates_all.append(updates)
-        last_sent_frame = frame_img.copy()
+        reference_frame = frame_img.copy()
+
+    if frames:
+        last_sent_frame = frames[-1].copy()
 
     return jsonify({"frames": updates_all})
 
