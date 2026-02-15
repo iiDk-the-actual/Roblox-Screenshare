@@ -19,6 +19,7 @@ AUDIO_BUFFER = 5
 USE_MICROPHONE = False
 
 last_sent_frame = None
+force_full_frame = False
 FRAME_BUFFER_SIZE = FPS
 frame_buffer = []
 buffer_lock = threading.Lock()
@@ -60,7 +61,11 @@ def frame():
 
     updates_all = []
 
-    reference_frame = last_sent_frame if last_sent_frame is not None else frames[0] if frames else None
+    if force_full_frame:
+        reference_frame = None
+        force_full_frame = False
+    else:
+        reference_frame = last_sent_frame if last_sent_frame is not None else frames[0] if frames else None
 
     for frame_img in frames:
         updates = []
@@ -100,10 +105,11 @@ def settings():
 
 @app.route("/reset")
 def reset():
-    global frame_buffer, last_sent_frame
+    global frame_buffer, last_sent_frame, force_full_frame
     with buffer_lock:
         frame_buffer = []
     last_sent_frame = None
+    force_full_frame = True
     return "OK"
 
 SAMPLE_RATE = 24000
