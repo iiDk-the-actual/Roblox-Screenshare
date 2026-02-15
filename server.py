@@ -13,13 +13,15 @@ app = Flask(__name__)
 # SETTINGS
 WIDTH = 200
 HEIGHT = int(WIDTH * 9 / 16) # 16/9
-FPS = 10
+FPS = 8
+HIGH_RESOLUTION = False # laggy!
 
+AUDIO = True
 AUDIO_BUFFER = 5
 USE_MICROPHONE = False
 
 last_sent_frame = None
-force_full_frame = False
+force_full_frame = True
 FRAME_BUFFER_SIZE = FPS
 frame_buffer = []
 buffer_lock = threading.Lock()
@@ -54,7 +56,7 @@ def capture_frames():
 
 @app.route("/frame")
 def frame():
-    global last_sent_frame
+    global last_sent_frame, force_full_frame
 
     with buffer_lock:
         frames = frame_buffer.copy()
@@ -101,6 +103,8 @@ def settings():
         "height": HEIGHT,
         "fps": FPS,
         "audiobuffer": AUDIO_BUFFER,
+        "highres": HIGH_RESOLUTION,
+        "audio": AUDIO
     })
 
 @app.route("/reset")
