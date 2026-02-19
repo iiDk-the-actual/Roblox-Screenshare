@@ -11,6 +11,8 @@ import time
 app = Flask(__name__)
 
 # SETTINGS
+TARGET_MONITOR = 1
+
 WIDTH = 200
 HEIGHT = int(WIDTH * 9 / 16) # 16/9
 FPS = 8
@@ -34,7 +36,7 @@ def capture_frames():
     global frame_buffer
 
     with mss.mss() as sct:
-        monitor = sct.monitors[1]
+        monitor = sct.monitors[TARGET_MONITOR]
         frame_interval = 1.0 / FPS
 
         while True:
