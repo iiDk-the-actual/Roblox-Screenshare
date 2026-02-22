@@ -16,7 +16,7 @@ TARGET_MONITOR = 1
 WIDTH = 200
 HEIGHT = int(WIDTH * 9 / 16) # 16/9
 FPS = 8
-HIGH_RESOLUTION = False # laggy!
+MODE = "Default" # Default, HighRes/Legacy/Groovy
 
 AUDIO = True
 AUDIO_BUFFER = 5
@@ -105,7 +105,7 @@ def settings():
         "height": HEIGHT,
         "fps": FPS,
         "audiobuffer": AUDIO_BUFFER,
-        "highres": HIGH_RESOLUTION,
+        "mode": MODE,
         "audio": AUDIO
     })
 
